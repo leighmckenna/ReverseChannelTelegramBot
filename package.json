@@ -19,5 +19,8 @@
   "bugs": {
     "url": "https://github.com/leimckenna/ReverseChannelTelegramBot/issues"
   },
-  "homepage": "https://github.com/leimckenna/ReverseChannelTelegramBot#readme"
+  "homepage": "https://github.com/leimckenna/ReverseChannelTelegramBot#readme",
+  "devDependencies": {
+    "typescript": "^4.3.5"
+  }
 }
