@@ -1,4 +1,5 @@
 import { Context, Telegraf } from 'telegraf'
+import { AppUser, Channel } from './schema';
 import { token } from './config'
 
 const bot = new Telegraf(token)
