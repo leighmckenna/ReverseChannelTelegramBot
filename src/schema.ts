@@ -5,21 +5,21 @@ enum Tasks {
 };
 
 interface AppUser {
-    UID: number,
     nameOnMsg: string,
-    tgUID: number,
-    chatOwned: number[],
-    chatModed: number[],
-    chatSender: number[],
+    UUID: number,
+    chatOwned: string[],
+    chatModed: string[],
+    chatSender: string[],
     banned: boolean
 };
 
 interface Channel {
-    UID: number,
+    UUID: string,
     owner: number,
     ops: number[],
     senders: number[],
-    senderAlias: Map<string, number>,
+// for the record, this is mapping a string (alias), to a number (user's uuid as assigned by telegram)
+    senderAlias: Map<string, number>, 
     joinLink: string
 };
 

@@ -1,5 +1,6 @@
 import { Context, Telegraf } from 'telegraf';
 import { AppUser, Channel } from './schema';
+import { v4 as uuidv4 } from 'uuid';
 import { token } from './config';
 
 const bot = new Telegraf(token);
@@ -11,12 +12,11 @@ var chanList: Channel[] = [];
 //populate new user
 bot.start((ctx) => {
     userList.push(<AppUser> {
-        UID: getUserUID(),
+        UUID: ctx.from.id,
         nameOnMsg: ctx.from.first_name,
-        tgUID: ctx.from.id,
-        chatOwned: [] as number[],
-        chatModed: [] as number[],
-        chatSender: [] as number[],
+        chatOwned: [] as string[],
+        chatModed: [] as string[],
+        chatSender: [] as string[],
         banned: false
     })
 });
@@ -25,15 +25,14 @@ bot.start((ctx) => {
 bot.command('newchannel', (ctx) => {
     chanList.push(
         <Channel> {
-            UID: getChannelUID(),
-            owner: getUserFromTGID(ctx.from.id),
+            UUID: getUUID(),
+            owner: ctx.from.id,
             ops: [] as number[],
             senders: [] as number[],
             senderAlias: new Map<string, number>(),
             joinLink: ctx.from.first_name
         }
     );
-
 });
 
 
@@ -54,18 +53,15 @@ process.once('SIGTERM', () => bot.stop('SIGTERM'));
 //
 ////////////////////////////////////////////////////
 
-//currently makes UID for users, replace with actual UID generation later
-function getUserUID(): number {
-    return userList.length;
+// Generates a UUID from the UUID package
+function getUUID(): string {
+    return uuidv4();
 }
 
-//currently makes UID for channels, replace with actual UID generation later
-function getChannelUID(): number {
-    return chanList.length;
+function getUser(UUID: number): AppUser {
+    return <AppUser> userList.find( AppUser => AppUser.UUID === UUID);
 }
 
-function getUserFromTGID(telegramID: number): number {
-
-    return 0;
+function getChannel(UUID: string): Channel {
+    return <Channel> chanList.find( Channel => Channel.UUID === UUID);
 }
-
