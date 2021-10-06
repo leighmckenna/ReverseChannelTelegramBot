@@ -1,4 +1,4 @@
-import { Context, Bot } from 'grammy';
+import { Bot } from 'grammy';
 import { AppUser, Channel } from './schema';
 import { v4 as uuidv4 } from 'uuid';
 import { token, ownerUUID } from './config';
