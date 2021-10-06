@@ -27,19 +27,23 @@ bot.start((ctx) => {
 
 // Create a new channel
 bot.command('newchannel', (ctx) => {
-    let newChannelLength:number = chanList.push(
-        <Channel> {
-            UUID: getUUID(),
-            owner: ctx.from.id,
-            ops: [] as number[],
-            senders: [] as number[],
-            senderAlias: new Map<string, number>(),
-            joinLink: getUUID()
-        }
-    );
-
-    ctx.reply("Alrighty, " + ctx.from.first_name + ", a new channel directed at you has been set up! In order to let people join, have them message this bot and sent this message: \n\n/joinchannel " + chanList[chanList.length-1].joinLink + "\n\n After that, they'll be able to send you anonymous via this bot.");
+    if (userHasChannel(ctx.from.id)){
+        // true, user has a channel
+        //say no and tell them they have one
+    } else {
+        let newChannelLength:number = chanList.push(
+            <Channel> {
+                UUID: getUUID(),
+                owner: ctx.from.id,
+                ops: [] as number[],
+                senders: [] as number[],
+                senderAlias: new Map<string, number>(),
+                joinLink: getUUID()
+            }
+        );
     
+        ctx.reply("Alrighty, " + ctx.from.first_name + ", a new channel directed at you has been set up! In order to let people join, have them message this bot and sent this message: \n\n/joinchannel " + chanList[chanList.length-1].joinLink + "\n\n After that, they'll be able to send you anonymous via this bot.");    
+    }
 });
 
 // Join an existing channel via code
@@ -60,6 +64,10 @@ bot.command('joinchannel', (ctx) => {
     }
 });
 
+// menu for channel management
+bot.command('managechannel', (ctx) => {
+    
+});
 
 // start bot
 bot.launch();
@@ -82,14 +90,29 @@ function getUUID(): string {
     return uuidv4();
 }
 
+// Returns the index of the user that has the UUID specified
 function getUser(UUID: number): number {
     return userList.findIndex( AppUser => AppUser.UUID === UUID);
 }
 
+// Returns the index of the channel that has the UUID specified
 function getChannel(UUID: string): number {
     return chanList.findIndex( Channel => Channel.UUID === UUID);
 }
 
+// Returns the index of the channel the user is trying to join
 function getChannelFromJoin(joinCode: string): number {
     return chanList.findIndex( Channel => Channel.joinLink === joinCode);
+}
+
+// Returns true if the channel exists and else otherwise
+function userHasChannel(UUID: number): boolean {
+    let channel = chanList.findIndex( Channel => Channel.owner === UUID);
+    if (channel != undefined){
+        // if the channel IS NOT undefined (exists)
+        return true;
+    } else {
+        // if the channel IS undefined
+        return false;
+    }
 }

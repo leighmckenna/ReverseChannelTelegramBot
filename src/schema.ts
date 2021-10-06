@@ -10,6 +10,7 @@ interface AppUser {
     chatOwned: string[],
     chatModed: string[],
     chatSender: string[],
+    chatTarget: string,
     banned: boolean
 };
 
