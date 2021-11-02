@@ -1,8 +1,4 @@
 
-enum Tasks {
-    Admin,
-    Message
-};
 
 interface AppUser {
     nameOnMsg: string,
@@ -11,6 +7,7 @@ interface AppUser {
     chatModed: string[],
     chatSender: string[],
     chatTarget: string,
+    currentAction: string,
     banned: boolean
 };
 
@@ -22,11 +19,6 @@ interface Channel {
 // for the record, this is mapping a string (alias), to a number (user's uuid as assigned by telegram)
     senderAlias: Map<string, number>, 
     joinLink: string
-};
-
-interface UserStatus{
-    task: Tasks,
-    focusedChannel: number,
 };
 
 export {AppUser, Channel}

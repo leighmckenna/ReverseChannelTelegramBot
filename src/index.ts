@@ -1,7 +1,8 @@
-import { Bot } from 'grammy';
+import { Bot, InlineKeyboard } from 'grammy';
 import { AppUser, Channel } from './schema';
 import { v4 as uuidv4 } from 'uuid';
 import { token, ownerUUID } from './config';
+import { StatelessQuestion } from '@grammyjs/stateless-question/dist/source';
 import { channel } from 'diagnostics_channel';
 
 const bot = new Bot(token);
@@ -73,8 +74,37 @@ bot.command('joinchannel', (ctx) => {
 
 // menu for channel management
 bot.command('managechannel', (ctx) => {
-
+    // NYE
 });
+
+// bot.command('messagechannel', (ctx) => {
+//     // list channels via inline bot (index them based on where they are in user's chatSender)
+//     if (!ctx.from) {
+//         return; // this is stupid
+//     }
+//     const InlineChannelMenu = new InlineKeyboard();
+
+//     let currentUser = userList[getUser(ctx.from.id)];
+
+//     for (let i = 0; i < currentUser.chatSender.length; i++) {
+//         InlineChannelMenu.text( (i+1) + ": " + getOwnerNameFromChannel(currentUser.chatSender[i]), "");
+//     }
+// })
+
+
+// deal with non-command user messages
+bot.on('message', (ctx) => {
+    if(userList[ctx.from.id].currentAction){
+        let chanIndex = getChannel(userList[ctx.from.id].currentAction);
+        // verify user has send access to channel
+        if (chanList[chanIndex].senders.includes(ctx.from.id)){
+// whatever goes in here to actually send the message
+        }
+
+    } else {
+        ctx.reply("You have no selected channel. Please select a channel with /messagechannel.");
+    }
+})
 
 // start bot
 bot.start();
@@ -110,6 +140,16 @@ function getChannel(UUID: string): number {
 // Returns the index of the channel the user is trying to join
 function getChannelFromJoin(joinCode: string): number {
     return chanList.findIndex(Channel => Channel.joinLink === joinCode);
+}
+
+// 
+function getOwnerNameFromChannel(UUID: string): string {
+    // get the channel
+    let channelInd = getChannel(UUID);
+    // get the owner
+    let ownerInd = getUser(chanList[channelInd].owner);
+    // get the owner's name and return
+    return userList[ownerInd].nameOnMsg;
 }
 
 // Returns true if the channel exists and else otherwise
