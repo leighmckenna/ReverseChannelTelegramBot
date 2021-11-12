@@ -1,4 +1,4 @@
-import { Bot, InlineKeyboard } from 'grammy';
+import { Api, Bot, InlineKeyboard } from 'grammy';
 import { AppUser, Channel } from './schema';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -15,6 +15,7 @@ bot.command('start', (ctx) => {
     if (ctx.from && getUser(ctx.from.id) == -1) {
         userList.push(<AppUser>{
             UUID: ctx.from.id,
+            chatID: ctx.chat.id,
             nameOnMsg: ctx.from.first_name,
             channelsOwned: [] as string[],
             channelsModded: [] as string[],
@@ -32,23 +33,42 @@ bot.command('start', (ctx) => {
     }
 });
 
+bot.command('listchannels', (ctx) => {
+    ctx.reply("there are " + chanList.length + " channels");
+    for (let channel of chanList) {
+        ctx.reply(channel.owner.toString());
+    }
+    ctx.reply("done listing channels");
+    
+});
+
 // Create a new channel
 bot.command('newchannel', (ctx) => {
+    ctx.reply("Creating a new channel...");
     if (ctx.from) {
+        ctx.reply("we received your command");
         if (userHasChannel(ctx.from.id)) {
             // true, user has a channel
             //say no and tell them they have one
+            ctx.reply("user has channel");
         } else {
-            let newChannelLength: number = chanList.push(
-                <Channel>{
-                    UUID: getUUID(),
-                    owner: ctx.from.id,
-                    mods: [] as number[],
-                    senders: [] as number[],
-                    senderAlias: new Map<string, number>(),
-                    joinLink: getUUID()
-                }
-            );
+            // create a new channel and add it to the channel list
+            let newChannel = <Channel>{
+                UUID: getUUID(),
+                owner: ctx.from.id,
+                mods: [] as number[],
+                senders: [] as number[],
+                senderAlias: new Map<string, number>(),
+                joinLink: getUUID()
+            };
+            let newChannelLength: number = chanList.push(newChannel);
+
+            // add the channel to the user's owned channels
+            let thisUser = userList[getUser(ctx.from.id)];
+            thisUser.channelsOwned.push(newChannel.UUID)
+
+            // set channel as the active channel
+            thisUser.activeChannel = newChannel.UUID;
 
             ctx.reply("Alrighty, " + ctx.from.first_name + ", a new channel directed at you has been set up! In order to let people join, have them message this bot and sent this message: \n\n/joinchannel " + chanList[chanList.length - 1].joinLink + "\n\n After that, they'll be able to send you anonymous via this bot.");
         }
@@ -97,17 +117,37 @@ bot.command('managechannel', (ctx) => {
 
 // deal with non-command user messages
 bot.on('message', (ctx) => {
-    // if(userList[ctx.from.id].currentAction){
-        // let chanIndex = getChannel(userList[ctx.from.id].currentAction);
+    // if user is in a channel
+    if(userList[ctx.from.id].activeChannel){
+        let chanIndex = getChannel(userList[ctx.from.id].activeChannel);
+        let myChannel = chanList[chanIndex];
+        // check if user owns channel
+        if (myChannel.owner == ctx.from.id){
+            // check if message is a broadcast or reply
+            if (ctx.message.reply_to_message){
+                // message is a reply, send to singular user
+
+            } else {
+                // message is not a reply, broadcast to all users
+                // @TODO: Add support for media
+                for (let userID of myChannel.senders) {
+                    let user = userList[getUser(userID)];
+                    if (ctx.message.text) {
+                        ctx.api.sendMessage(user.chatID, ctx.message.text);
+                    }
+                }
+            }
+        }
         // verify user has send access to channel
-        // if (chanList[chanIndex].senders.includes(ctx.from.id)){
-// whatever goes in here to actually send the message
-        // }
-// 
-    // } else {
-        // ctx.reply("You have no selected channel. Please select a channel with /messagechannel.");
-    // }
-})
+        else if (myChannel.senders.includes(ctx.from.id)){
+
+        } 
+    // user is not in a channel
+    } else {
+        ctx.reply("You have no selected channel. Please select a channel with /messagechannel.");
+    }
+    ctx.reply("You wrote: " + ctx.message.text);
+});
 
 // start bot
 bot.start();
@@ -158,7 +198,7 @@ function getOwnerNameFromChannel(UUID: string): string {
 // Returns true if the channel exists and else otherwise
 function userHasChannel(UUID: number): boolean {
     let channel = chanList.findIndex(Channel => Channel.owner === UUID);
-    if (channel != undefined) {
+    if (channel != -1) {
         // if the channel IS NOT undefined (exists)
         return true;
     } else {
