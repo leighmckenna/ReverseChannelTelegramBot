@@ -23,9 +23,14 @@ bot.command('start', (ctx) => {
             isBanned: false
         });
 
+        if (process.env.NODE_ENV == 'dev'){
+            console.log(JSON.stringify(userList[userList.length-1]));
+            console.log("User logged at index: " + (userList.length-1));
+        }
+
         ctx.reply("Hello, " + ctx.from.first_name + ", \n\n Thank you for using this bot, you have been registered.\n\n In order to get started, either join a channel with /joinchat followed by the code you were given, or make a channel with /newchannel.");
     }
-    if (ctx.from) {
+    else if (ctx.from) {
         ctx.reply("Hello, " + ctx.from.first_name + ", it looks like you already exist and don't need to run /start.");
     }
     else {
@@ -33,6 +38,7 @@ bot.command('start', (ctx) => {
     }
 });
 
+/* test method pls ignore
 bot.command('listchannels', (ctx) => {
     ctx.reply("there are " + chanList.length + " channels");
     for (let channel of chanList) {
@@ -40,7 +46,8 @@ bot.command('listchannels', (ctx) => {
     }
     ctx.reply("done listing channels");
     
-});
+}); 
+*/ 
 
 // Create a new channel
 bot.command('newchannel', (ctx) => {
@@ -69,7 +76,7 @@ bot.command('newchannel', (ctx) => {
 
             // set channel as the active channel
             thisUser.activeChannel = newChannel.UUID;
-
+            
             ctx.reply("Alrighty, " + ctx.from.first_name + ", a new channel directed at you has been set up! In order to let people join, have them message this bot and sent this message: \n\n/joinchannel " + chanList[chanList.length - 1].joinLink + "\n\n After that, they'll be able to send you anonymous via this bot.");
         }
     }
@@ -87,12 +94,21 @@ bot.command('joinchannel', (ctx) => {
             userList[userInd].channelsSender.push(chanList[channelInd].UUID);
             // add user to the channel's allowed senders list
             chanList[channelInd].senders.push(userList[userInd].UUID);
+            // switch user's active channel
+            userList[userInd].activeChannel = chanList[channelInd].UUID;
 
-            ctx.reply("Alrighty, " + ctx.from.first_name + ", you've joined a channel that forwards to:" + getUser(chanList[channelInd].owner));
+            ctx.reply("Alrighty, " + ctx.from.first_name + ", you've joined a channel that forwards to:" + userList[getUser(chanList[channelInd].owner)].nameOnMsg);
         } else {
             ctx.reply("Oops, looks like that's not a valid code! Try again.");
         }
+
+        if (process.env.NODE_ENV == 'dev'){
+            console.log(JSON.stringify(chanList[channelInd].senders));
+            //console.log("User joined at index: " + (chanList[channelInd].senders.length-1));
+        }
     }
+
+    
 });
 
 // menu for channel management
@@ -117,6 +133,7 @@ bot.command('managechannel', (ctx) => {
 
 // deal with non-command user messages
 bot.on('message', (ctx) => {
+    /*
     // if user is in a channel
     if(userList[ctx.from.id].activeChannel){
         let chanIndex = getChannel(userList[ctx.from.id].activeChannel);
@@ -146,6 +163,7 @@ bot.on('message', (ctx) => {
     } else {
         ctx.reply("You have no selected channel. Please select a channel with /messagechannel.");
     }
+    */
     ctx.reply("You wrote: " + ctx.message.text);
 });
 
