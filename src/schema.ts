@@ -3,6 +3,7 @@
 interface AppUser {
     nameOnMsg: string,
     UUID: number,
+    chatID: number,
     channelsOwned: string[],
     channelsModded: string[],
     channelsSender: string[],
