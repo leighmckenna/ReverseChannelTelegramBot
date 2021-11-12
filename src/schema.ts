@@ -3,21 +3,19 @@
 interface AppUser {
     nameOnMsg: string,
     UUID: number,
-    chatOwned: string[],
-    chatModed: string[],
-    chatSender: string[],
-    chatTarget: string,
-    currentAction: string,
-    banned: boolean
+    channelsOwned: string[],
+    channelsModded: string[],
+    channelsSender: string[],
+    activeChannel: string,
+    isBanned: boolean
 };
 
 interface Channel {
     UUID: string,
     owner: number,
-    ops: number[],
+    mods: number[],
     senders: number[],
-// for the record, this is mapping a string (alias), to a number (user's uuid as assigned by telegram)
-    senderAlias: Map<string, number>, 
+    senderAlias: Map<string, number>, // for the record, this is mapping a string (alias), to a number (user's uuid as assigned by telegram)
     joinLink: string
 };
 

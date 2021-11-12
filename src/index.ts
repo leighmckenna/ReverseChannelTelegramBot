@@ -17,10 +17,10 @@ bot.command('start', (ctx) => {
         userList.push(<AppUser>{
             UUID: ctx.from.id,
             nameOnMsg: ctx.from.first_name,
-            chatOwned: [] as string[],
-            chatModed: [] as string[],
-            chatSender: [] as string[],
-            banned: false
+            channelsOwned: [] as string[],
+            channelsModded: [] as string[],
+            channelsSender: [] as string[],
+            isBanned: false
         });
 
 
@@ -40,7 +40,7 @@ bot.command('newchannel', (ctx) => {
                 <Channel>{
                     UUID: getUUID(),
                     owner: ctx.from.id,
-                    ops: [] as number[],
+                    mods: [] as number[],
                     senders: [] as number[],
                     senderAlias: new Map<string, number>(),
                     joinLink: getUUID()
@@ -61,7 +61,7 @@ bot.command('joinchannel', (ctx) => {
         // if the number exists and is within the bounds of normalcy
         if (channelInd != null && channelInd >= 0 && channelInd < chanList.length) {
             // add channel to user's default list
-            userList[userInd].chatSender.push(chanList[channelInd].UUID);
+            userList[userInd].channelsSender.push(chanList[channelInd].UUID);
             // add user to the channel's allowed senders list
             chanList[channelInd].senders.push(userList[userInd].UUID);
 
@@ -94,16 +94,16 @@ bot.command('managechannel', (ctx) => {
 
 // deal with non-command user messages
 bot.on('message', (ctx) => {
-    if(userList[ctx.from.id].currentAction){
-        let chanIndex = getChannel(userList[ctx.from.id].currentAction);
+    // if(userList[ctx.from.id].currentAction){
+        // let chanIndex = getChannel(userList[ctx.from.id].currentAction);
         // verify user has send access to channel
-        if (chanList[chanIndex].senders.includes(ctx.from.id)){
+        // if (chanList[chanIndex].senders.includes(ctx.from.id)){
 // whatever goes in here to actually send the message
-        }
-
-    } else {
-        ctx.reply("You have no selected channel. Please select a channel with /messagechannel.");
-    }
+        // }
+// 
+    // } else {
+        // ctx.reply("You have no selected channel. Please select a channel with /messagechannel.");
+    // }
 })
 
 // start bot
