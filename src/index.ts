@@ -1,11 +1,8 @@
 import { Bot, InlineKeyboard } from 'grammy';
 import { AppUser, Channel } from './schema';
 import { v4 as uuidv4 } from 'uuid';
-import { token, ownerUUID } from './config';
-import { StatelessQuestion } from '@grammyjs/stateless-question/dist/source';
-import { channel } from 'diagnostics_channel';
 
-const bot = new Bot(token);
+const bot = new Bot(process.env.BOT_TOKEN);
 
 //define global lists of users and channels
 var userList: AppUser[] = [];
@@ -25,7 +22,10 @@ bot.command('start', (ctx) => {
 
 
         ctx.reply("Hello, " + ctx.from.first_name + ", \n\n Thank you for using this bot, you have been registered.\n\n In order to get started, either join a channel with /joinchat followed by the code you were given, or make a channel with /newchannel.");
-
+        if (process.env.NODE_ENV == 'dev'){
+            console.log(JSON.stringify(userList[userList.length-1]));
+            console.log("User logged at index: " + (userList.length-1));
+        }
     }
 });
 
