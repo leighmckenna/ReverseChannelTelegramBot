@@ -10,7 +10,9 @@ var chanList: Channel[] = [];
 
 // Populate new user
 bot.command('start', (ctx) => {
-    if (ctx.from) {
+    // checks to see if the user exists and is already in the list
+    // getUser returns -1 if the user does not exist
+    if (ctx.from && getUser(ctx.from.id) == -1) {
         userList.push(<AppUser>{
             UUID: ctx.from.id,
             nameOnMsg: ctx.from.first_name,
@@ -20,12 +22,13 @@ bot.command('start', (ctx) => {
             isBanned: false
         });
 
-
         ctx.reply("Hello, " + ctx.from.first_name + ", \n\n Thank you for using this bot, you have been registered.\n\n In order to get started, either join a channel with /joinchat followed by the code you were given, or make a channel with /newchannel.");
-        if (process.env.NODE_ENV == 'dev'){
-            console.log(JSON.stringify(userList[userList.length-1]));
-            console.log("User logged at index: " + (userList.length-1));
-        }
+    }
+    if (ctx.from) {
+        ctx.reply("Hello, " + ctx.from.first_name + ", it looks like you already exist and don't need to run /start.");
+    }
+    else {
+        ctx.reply("According to telegram, no one sent this message. Please try again or contact the owner of the bot.");
     }
 });
 
