@@ -2,3 +2,4 @@
 *.DS_Store
 *prod
 .env
+*package-lock.json*
