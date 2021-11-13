@@ -1,6 +1,8 @@
 import { Api, Bot, InlineKeyboard } from 'grammy';
 import { AppUser, Channel } from './schema';
 import { v4 as uuidv4 } from 'uuid';
+import data from './wordList.json';
+
 
 const bot = new Bot(process.env.BOT_TOKEN);
 
@@ -229,4 +231,16 @@ function userHasChannel(UUID: number): boolean {
         // if the channel IS undefined
         return false;
     }
+}
+
+function generateAlias(): string {
+    let alias = "";
+
+    let adjList = data.adj;
+    let nounList = data.noun;
+
+    alias += adjList[Math.floor(Math.random() * adjList.length)];
+    alias += nounList[Math.floor(Math.random() * nounList.length)];
+
+    return alias;
 }
