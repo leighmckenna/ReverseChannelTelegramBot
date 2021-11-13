@@ -145,7 +145,7 @@ bot.on('message', (ctx) => {
             // check if message is a broadcast or reply
             if (ctx.message.reply_to_message){
                 // message is a reply, send to singular user
-                
+
             } else {
                 // message is not a reply, broadcast to all users
                 // @TODO: Add support for media
@@ -158,7 +158,7 @@ bot.on('message', (ctx) => {
             }
         }
         // verify user has send access to channel
-        */
+        
         /*else*/ if (myChannel.senders.includes(ctx.from.id)){
             let owner = userList[getUser(myChannel.owner)];
             if (ctx.message.text) {
