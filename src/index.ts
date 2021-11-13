@@ -150,8 +150,6 @@ bot.on('message', (ctx) => {
             // check if message is a broadcast or reply
             if (ctx.message.reply_to_message){
                 // message is a reply, send to singular user
-<<<<<<< Updated upstream
-=======
                 if (ctx.message.reply_to_message.text) {
                     // owner is replying to a sender
                     if (isUserMessage(ctx.message.reply_to_message.text)) {
@@ -173,7 +171,6 @@ bot.on('message', (ctx) => {
                         ctx.reply("I'm sorry, messages cannot be broadcast as replies.")
                     }
                 }
->>>>>>> Stashed changes
 
                 
 
