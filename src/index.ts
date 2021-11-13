@@ -133,11 +133,13 @@ bot.command('managechannel', (ctx) => {
 
 // deal with non-command user messages
 bot.on('message', (ctx) => {
-    /*
+    
     // if user is in a channel
     if(userList[ctx.from.id].activeChannel){
+        
         let chanIndex = getChannel(userList[ctx.from.id].activeChannel);
         let myChannel = chanList[chanIndex];
+        /*
         // check if user owns channel
         if (myChannel.owner == ctx.from.id){
             // check if message is a broadcast or reply
@@ -156,14 +158,18 @@ bot.on('message', (ctx) => {
             }
         }
         // verify user has send access to channel
-        else if (myChannel.senders.includes(ctx.from.id)){
-
+        */
+        /*else*/ if (myChannel.senders.includes(ctx.from.id)){
+            let owner = userList[getUser(myChannel.owner)];
+            if (ctx.message.text) {
+                ctx.api.sendMessage(owner.chatID, ctx.message.text);
+            }
         } 
     // user is not in a channel
     } else {
         ctx.reply("You have no selected channel. Please select a channel with /messagechannel.");
     }
-    */
+    
     ctx.reply("You wrote: " + ctx.message.text);
 });
 
