@@ -98,6 +98,9 @@ bot.command('joinchannel', (ctx) => {
             chanList[channelInd].senders.push(userList[userInd].UUID);
             // switch user's active channel
             userList[userInd].activeChannel = chanList[channelInd].UUID;
+            // give user an alias
+            let alias = generateAlias();
+            chanList[channelInd].senderAlias.set(alias, ctx.from.id);
 
             ctx.reply("Alrighty, " + ctx.from.first_name + ", you've joined a channel that forwards to:" + userList[getUser(chanList[channelInd].owner)].nameOnMsg);
         } else {
@@ -147,6 +150,30 @@ bot.on('message', (ctx) => {
             // check if message is a broadcast or reply
             if (ctx.message.reply_to_message){
                 // message is a reply, send to singular user
+<<<<<<< Updated upstream
+=======
+                if (ctx.message.reply_to_message.text) {
+                    // owner is replying to a sender
+                    if (isUserMessage(ctx.message.reply_to_message.text)) {
+                        console.log("Owner is replying to a user")
+                        let sender = getUserFromMessage(ctx.message.reply_to_message.text);
+                        if (sender) {
+                            let senderID = getIDfromSender(sender, userList[getUser(ctx.from.id)].activeChannel)
+                            if (senderID) {
+                                console.log("Sender is " + sender + " with ID " + senderID)
+                                let user = userList[getUser(senderID)];
+                                let owner = userList[getUser(myChannel.owner)];
+                                let username = owner.nameOnMsg;
+                                let wrappedMessage = "<" + username + "> " + ctx.message.text;
+                                ctx.api.sendMessage(user.chatID, wrappedMessage);
+                            }
+                        }
+                    // owner is trying to reply to the bot
+                    } else if (ctx.message.text) {
+                        ctx.reply("I'm sorry, messages cannot be broadcast as replies.")
+                    }
+                }
+>>>>>>> Stashed changes
 
                 
 
@@ -176,8 +203,6 @@ bot.on('message', (ctx) => {
     } else {
         ctx.reply("You have no selected channel. Please select a channel with /messagechannel.");
     }
-    
-    ctx.reply("You wrote: " + ctx.message.text);
 });
 
 // start bot
@@ -204,6 +229,14 @@ function getUUID(): string {
 // Returns the index of the user that has the UUID specified
 function getUser(UUID: number): number {
     return userList.findIndex(AppUser => AppUser.UUID === UUID);
+}
+
+// Returns the telegram user ID of a sender based on their alias
+function getIDfromSender(user: string, channelID: string): number | undefined {
+    if (chanList[getChannel(channelID)].senderAlias.get(user)) {
+        return chanList[getChannel(channelID)].senderAlias.get(user);
+    }
+    return undefined;
 }
 
 // Returns the index of the channel that has the UUID specified
