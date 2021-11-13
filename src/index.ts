@@ -141,7 +141,7 @@ bot.on('message', (ctx) => {
         
         let chanIndex = getChannel(userList[getUser(ctx.from.id)].activeChannel);
         let myChannel = chanList[chanIndex];
-        /*
+        
         // check if user owns channel
         if (myChannel.owner == ctx.from.id){
             // check if message is a broadcast or reply
@@ -154,13 +154,16 @@ bot.on('message', (ctx) => {
                 for (let userID of myChannel.senders) {
                     let user = userList[getUser(userID)];
                     if (ctx.message.text) {
-                        ctx.api.sendMessage(user.chatID, ctx.message.text);
+                        let owner = userList[getUser(myChannel.owner)];
+                        let username = owner.nameOnMsg;
+                        let wrappedMessage = "<" + username + "> " + ctx.message.text;
+                        ctx.api.sendMessage(user.chatID, wrappedMessage);
                     }
                 }
             }
         }
         // verify user has send access to channel
-        */
+        
         /*else*/ if (myChannel.senders.includes(ctx.from.id)){
             let owner = userList[getUser(myChannel.owner)];
             if (ctx.message.text) {
