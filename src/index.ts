@@ -139,13 +139,13 @@ bot.on('message', (ctx) => {
         
         let chanIndex = getChannel(userList[getUser(ctx.from.id)].activeChannel);
         let myChannel = chanList[chanIndex];
-        /*
+        
         // check if user owns channel
         if (myChannel.owner == ctx.from.id){
             // check if message is a broadcast or reply
             if (ctx.message.reply_to_message){
                 // message is a reply, send to singular user
-
+                
             } else {
                 // message is not a reply, broadcast to all users
                 // @TODO: Add support for media
