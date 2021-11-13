@@ -152,7 +152,10 @@ bot.on('message', (ctx) => {
                 for (let userID of myChannel.senders) {
                     let user = userList[getUser(userID)];
                     if (ctx.message.text) {
-                        ctx.api.sendMessage(user.chatID, ctx.message.text);
+                        let owner = userList[getUser(myChannel.owner)];
+                        let username = owner.nameOnMsg;
+                        let wrappedMessage = "<" + username + "> " + ctx.message.text;
+                        ctx.api.sendMessage(user.chatID, wrappedMessage);
                     }
                 }
             }
