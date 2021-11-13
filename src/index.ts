@@ -146,6 +146,8 @@ bot.on('message', (ctx) => {
             if (ctx.message.reply_to_message){
                 // message is a reply, send to singular user
 
+                
+
             } else {
                 // message is not a reply, broadcast to all users
                 // @TODO: Add support for media
@@ -210,6 +212,26 @@ function getChannel(UUID: string): number {
 // Returns the index of the channel the user is trying to join
 function getChannelFromJoin(joinCode: string): number {
     return chanList.findIndex(Channel => Channel.joinLink === joinCode);
+}
+
+// Returns the username extracted from a user's message
+function getUserFromMessage(message: string): string | null {
+    let re = new RegExp('<(.*)>');
+    let resultArray = re.exec(message);
+    if (resultArray) {
+        let result = resultArray[0];
+        if (process.env.NODE_ENV == 'dev'){
+            console.log(result);
+        }
+        return result;
+    }
+    return null;
+}
+
+// Returns true if the message is a forwarded user message, false if bot message
+function isUserMessage(message: string): boolean {
+    let re = new RegExp("^<");
+    return message.search(re) >= -1;
 }
 
 // 
