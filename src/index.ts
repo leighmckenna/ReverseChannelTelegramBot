@@ -135,9 +135,9 @@ bot.command('managechannel', (ctx) => {
 bot.on('message', (ctx) => {
     
     // if user is in a channel
-    if(userList[ctx.from.id].activeChannel){
+    if(userList[getUser(ctx.from.id)].activeChannel){
         
-        let chanIndex = getChannel(userList[ctx.from.id].activeChannel);
+        let chanIndex = getChannel(userList[getUser(ctx.from.id)].activeChannel);
         let myChannel = chanList[chanIndex];
         /*
         // check if user owns channel
