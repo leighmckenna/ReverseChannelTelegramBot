@@ -103,8 +103,8 @@ bot.command('joinchannel', (ctx) => {
         }
 
         if (process.env.NODE_ENV == 'dev'){
-            console.log(JSON.stringify(chanList[channelInd].senders));
-            //console.log("User joined at index: " + (chanList[channelInd].senders.length-1));
+            console.log(JSON.stringify(userList[userInd]));
+            console.log("User joined channel at index: " + (userInd));
         }
     }
 
