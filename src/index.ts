@@ -68,6 +68,7 @@ bot.command('newchannel', (ctx) => {
                 mods: [] as number[],
                 senders: [] as number[],
                 senderAlias: new Map<string, number>(),
+                senderAliasReverse: new Map<number, string>(),
                 joinLink: getUUID()
             };
             let newChannelLength: number = chanList.push(newChannel);
@@ -85,6 +86,7 @@ bot.command('newchannel', (ctx) => {
 });
 
 // Join an existing channel via code
+// @TODO: Error validation - What happens if the user hasn't called /start?
 bot.command('joinchannel', (ctx) => {
     if (ctx.from) {
         let joinCode: string = ctx.message.text.substring(13);
@@ -100,9 +102,12 @@ bot.command('joinchannel', (ctx) => {
             userList[userInd].activeChannel = chanList[channelInd].UUID;
             // give user an alias
             let alias = generateAlias();
+            console.log(alias);
             chanList[channelInd].senderAlias.set(alias, ctx.from.id);
+            chanList[channelInd].senderAliasReverse.set(ctx.from.id, alias);
+            console.log(JSON.stringify(chanList[channelInd]));
 
-            ctx.reply("Alrighty, " + ctx.from.first_name + ", you've joined a channel that forwards to:" + userList[getUser(chanList[channelInd].owner)].nameOnMsg);
+            ctx.reply("Alrighty, " + ctx.from.first_name + ", you've joined a channel that forwards to: " + userList[getUser(chanList[channelInd].owner)].nameOnMsg);
         } else {
             ctx.reply("Oops, looks like that's not a valid code! Try again.");
         }
@@ -153,12 +158,13 @@ bot.on('message', (ctx) => {
                 if (ctx.message.reply_to_message.text) {
                     // owner is replying to a sender
                     if (isUserMessage(ctx.message.reply_to_message.text)) {
-                        console.log("Owner is replying to a user")
+                        console.log("Owner is replying to a user");
                         let sender = getUserFromMessage(ctx.message.reply_to_message.text);
                         if (sender) {
-                            let senderID = getIDfromSender(sender, userList[getUser(ctx.from.id)].activeChannel)
+                            let senderID = getIDfromSender(sender, userList[getUser(ctx.from.id)].activeChannel);
                             if (senderID) {
-                                console.log("Sender is " + sender + " with ID " + senderID)
+                                console.log("Sender is " + sender + " with ID " + senderID);
+                                console.log("test1");
                                 let user = userList[getUser(senderID)];
                                 let owner = userList[getUser(myChannel.owner)];
                                 let username = owner.nameOnMsg;
@@ -166,6 +172,7 @@ bot.on('message', (ctx) => {
                                 ctx.api.sendMessage(user.chatID, wrappedMessage);
                             }
                         }
+                        console.log("test2");
                     // owner is trying to reply to the bot
                     } else if (ctx.message.text) {
                         ctx.reply("I'm sorry, messages cannot be broadcast as replies.")
@@ -190,10 +197,13 @@ bot.on('message', (ctx) => {
         }
         // verify user has send access to channel
         
-        /*else*/ if (myChannel.senders.includes(ctx.from.id)){
+        else if (myChannel.senders.includes(ctx.from.id)){
             let owner = userList[getUser(myChannel.owner)];
             if (ctx.message.text) {
-                ctx.api.sendMessage(owner.chatID, ctx.message.text);
+                let alias = myChannel.senderAliasReverse.get(ctx.from.id);
+                console.log(alias);
+                let wrappedMessage = "<" + alias + "> " + ctx.message.text;
+                ctx.api.sendMessage(owner.chatID, wrappedMessage);
             }
         } 
     // user is not in a channel
@@ -248,7 +258,7 @@ function getChannelFromJoin(joinCode: string): number {
 
 // Returns the username extracted from a user's message
 function getUserFromMessage(message: string): string | null {
-    let re = new RegExp('<(.*)>');
+    let re = new RegExp('(?<=<).*(?=>)');
     let resultArray = re.exec(message);
     if (resultArray) {
         let result = resultArray[0];
