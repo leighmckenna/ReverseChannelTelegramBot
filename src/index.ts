@@ -53,64 +53,74 @@ bot.command('listchannels', (ctx) => {
 
 // Create a new channel
 bot.command('newchannel', (ctx) => {
-    ctx.reply("Creating a new channel...");
     if (ctx.from) {
-        ctx.reply("we received your command");
-        if (userHasChannel(ctx.from.id)) {
-            // true, user has a channel
-            //say no and tell them they have one
-            ctx.reply("user has channel");
+        if (getUser(ctx.from.id) > -1) {
+            ctx.reply("Creating a new channel...");
+            if (userHasChannel(ctx.from.id)) {
+                // true, user has a channel
+                //say no and tell them they have one
+                ctx.reply("user has channel");
+            } else {
+                // create a new channel and add it to the channel list
+                let newChannel = <Channel>{
+                    UUID: getUUID(),
+                    owner: ctx.from.id,
+                    mods: [] as number[],
+                    senders: [] as number[],
+                    senderAlias: new Map<string, number>(),
+                    joinLink: getUUID()
+                };
+                let newChannelLength: number = chanList.push(newChannel);
+
+                // add the channel to the user's owned channels
+                let thisUser = userList[getUser(ctx.from.id)];
+                thisUser.channelsOwned.push(newChannel.UUID)
+
+                // set channel as the active channel
+                thisUser.activeChannel = newChannel.UUID;
+                
+                ctx.reply("Alrighty, " + ctx.from.first_name + ", a new channel directed at you has been set up! In order to let people join, have them message this bot and sent this message: \n\n/joinchannel " + chanList[chanList.length - 1].joinLink + "\n\n After that, they'll be able to send you anonymous via this bot.");
+            }
         } else {
-            // create a new channel and add it to the channel list
-            let newChannel = <Channel>{
-                UUID: getUUID(),
-                owner: ctx.from.id,
-                mods: [] as number[],
-                senders: [] as number[],
-                senderAlias: new Map<string, number>(),
-                joinLink: getUUID()
-            };
-            let newChannelLength: number = chanList.push(newChannel);
-
-            // add the channel to the user's owned channels
-            let thisUser = userList[getUser(ctx.from.id)];
-            thisUser.channelsOwned.push(newChannel.UUID)
-
-            // set channel as the active channel
-            thisUser.activeChannel = newChannel.UUID;
-            
-            ctx.reply("Alrighty, " + ctx.from.first_name + ", a new channel directed at you has been set up! In order to let people join, have them message this bot and sent this message: \n\n/joinchannel " + chanList[chanList.length - 1].joinLink + "\n\n After that, they'll be able to send you anonymous via this bot.");
+            ctx.reply("Whoa there, something went wrong. Try using /start first.");
         }
+        
     }
 });
 
 // Join an existing channel via code
 bot.command('joinchannel', (ctx) => {
     if (ctx.from) {
-        let joinCode: string = ctx.message.text.substring(13);
-        let channelInd = getChannelFromJoin(joinCode);
-        let userInd = getUser(ctx.from.id);
-        // if the number exists and is within the bounds of normalcy
-        if (channelInd != null && channelInd >= 0 && channelInd < chanList.length) {
-            // add channel to user's default list
-            userList[userInd].channelsSender.push(chanList[channelInd].UUID);
-            // add user to the channel's allowed senders list
-            chanList[channelInd].senders.push(userList[userInd].UUID);
-            // switch user's active channel
-            userList[userInd].activeChannel = chanList[channelInd].UUID;
-            // give user an alias
-            let alias = generateAlias();
-            chanList[channelInd].senderAlias.set(alias, ctx.from.id);
+        if (getUser(ctx.from.id) > -1) {
+            let joinCode: string = ctx.message.text.substring(13);
+            let channelInd = getChannelFromJoin(joinCode);
+            let userInd = getUser(ctx.from.id);
+            // if the number exists and is within the bounds of normalcy
+            if (channelInd != null && channelInd >= 0 && channelInd < chanList.length) {
+                // add channel to user's default list
+                userList[userInd].channelsSender.push(chanList[channelInd].UUID);
+                // add user to the channel's allowed senders list
+                chanList[channelInd].senders.push(userList[userInd].UUID);
+                // switch user's active channel
+                userList[userInd].activeChannel = chanList[channelInd].UUID;
+                // give user an alias
+                let alias = generateAlias();
+                chanList[channelInd].senderAlias.set(alias, ctx.from.id);
 
-            ctx.reply("Alrighty, " + ctx.from.first_name + ", you've joined a channel that forwards to:" + userList[getUser(chanList[channelInd].owner)].nameOnMsg);
+                ctx.reply("Alrighty, " + ctx.from.first_name + ", you've joined a channel that forwards to:" + userList[getUser(chanList[channelInd].owner)].nameOnMsg);
+            } else {
+                ctx.reply("Oops, looks like that's not a valid code! Try again.");
+            }
+
+            if (process.env.NODE_ENV == 'dev'){
+                console.log(JSON.stringify(userList[userInd]));
+                console.log("User joined channel at index: " + (userInd));
+            }
         } else {
-            ctx.reply("Oops, looks like that's not a valid code! Try again.");
+            ctx.reply("Whoa there, something went wrong. Try using /start first.");
         }
 
-        if (process.env.NODE_ENV == 'dev'){
-            console.log(JSON.stringify(userList[userInd]));
-            console.log("User joined channel at index: " + (userInd));
-        }
+        
     }
 
     
@@ -139,66 +149,70 @@ bot.command('managechannel', (ctx) => {
 // deal with non-command user messages
 bot.on('message', (ctx) => {
     
-    // if user is in a channel
-    if(userList[getUser(ctx.from.id)].activeChannel){
-        
-        let chanIndex = getChannel(userList[getUser(ctx.from.id)].activeChannel);
-        let myChannel = chanList[chanIndex];
-        
-        // check if user owns channel
-        if (myChannel.owner == ctx.from.id){
-            // check if message is a broadcast or reply
-            if (ctx.message.reply_to_message){
-                // message is a reply, send to singular user
-                if (ctx.message.reply_to_message.text) {
-                    // owner is replying to a sender
-                    if (isUserMessage(ctx.message.reply_to_message.text)) {
-                        console.log("Owner is replying to a user")
-                        let sender = getUserFromMessage(ctx.message.reply_to_message.text);
-                        if (sender) {
-                            let senderID = getIDfromSender(sender, userList[getUser(ctx.from.id)].activeChannel)
-                            if (senderID) {
-                                console.log("Sender is " + sender + " with ID " + senderID)
-                                let user = userList[getUser(senderID)];
-                                let owner = userList[getUser(myChannel.owner)];
-                                let username = owner.nameOnMsg;
-                                let wrappedMessage = "<" + username + "> " + ctx.message.text;
-                                ctx.api.sendMessage(user.chatID, wrappedMessage);
+    if (getUser(ctx.from.id) > -1) {
+            // if user is in a channel
+        if(userList[getUser(ctx.from.id)].activeChannel){
+            
+            let chanIndex = getChannel(userList[getUser(ctx.from.id)].activeChannel);
+            let myChannel = chanList[chanIndex];
+            
+            // check if user owns channel
+            if (myChannel.owner == ctx.from.id){
+                // check if message is a broadcast or reply
+                if (ctx.message.reply_to_message){
+                    // message is a reply, send to singular user
+                    if (ctx.message.reply_to_message.text) {
+                        // owner is replying to a sender
+                        if (isUserMessage(ctx.message.reply_to_message.text)) {
+                            console.log("Owner is replying to a user")
+                            let sender = getUserFromMessage(ctx.message.reply_to_message.text);
+                            if (sender) {
+                                let senderID = getIDfromSender(sender, userList[getUser(ctx.from.id)].activeChannel)
+                                if (senderID) {
+                                    console.log("Sender is " + sender + " with ID " + senderID)
+                                    let user = userList[getUser(senderID)];
+                                    let owner = userList[getUser(myChannel.owner)];
+                                    let username = owner.nameOnMsg;
+                                    let wrappedMessage = "<" + username + "> " + ctx.message.text;
+                                    ctx.api.sendMessage(user.chatID, wrappedMessage);
+                                }
                             }
+                        // owner is trying to reply to the bot
+                        } else if (ctx.message.text) {
+                            ctx.reply("I'm sorry, messages cannot be broadcast as replies.")
                         }
-                    // owner is trying to reply to the bot
-                    } else if (ctx.message.text) {
-                        ctx.reply("I'm sorry, messages cannot be broadcast as replies.")
                     }
-                }
 
-                
+                    
 
-            } else {
-                // message is not a reply, broadcast to all users
-                // @TODO: Add support for media
-                for (let userID of myChannel.senders) {
-                    let user = userList[getUser(userID)];
-                    if (ctx.message.text) {
-                        let owner = userList[getUser(myChannel.owner)];
-                        let username = owner.nameOnMsg;
-                        let wrappedMessage = "<" + username + "> " + ctx.message.text;
-                        ctx.api.sendMessage(user.chatID, wrappedMessage);
+                } else {
+                    // message is not a reply, broadcast to all users
+                    // @TODO: Add support for media
+                    for (let userID of myChannel.senders) {
+                        let user = userList[getUser(userID)];
+                        if (ctx.message.text) {
+                            let owner = userList[getUser(myChannel.owner)];
+                            let username = owner.nameOnMsg;
+                            let wrappedMessage = "<" + username + "> " + ctx.message.text;
+                            ctx.api.sendMessage(user.chatID, wrappedMessage);
+                        }
                     }
                 }
             }
+            // verify user has send access to channel
+            
+            /*else*/ if (myChannel.senders.includes(ctx.from.id)){
+                let owner = userList[getUser(myChannel.owner)];
+                if (ctx.message.text) {
+                    ctx.api.sendMessage(owner.chatID, ctx.message.text);
+                }
+            } 
+        // user is not in a channel
+        } else {
+            ctx.reply("You have no selected channel. Please select a channel with /messagechannel.");
         }
-        // verify user has send access to channel
-        
-        /*else*/ if (myChannel.senders.includes(ctx.from.id)){
-            let owner = userList[getUser(myChannel.owner)];
-            if (ctx.message.text) {
-                ctx.api.sendMessage(owner.chatID, ctx.message.text);
-            }
-        } 
-    // user is not in a channel
     } else {
-        ctx.reply("You have no selected channel. Please select a channel with /messagechannel.");
+        ctx.reply("Whoa there, something went wrong. Try using /start first.");
     }
 });
 
