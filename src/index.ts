@@ -89,6 +89,7 @@ bot.command('newchannel', (ctx) => {
 });
 
 // Join an existing channel via code
+// @TODO: Error validation - What happens if the user hasn't called /start?
 bot.command('joinchannel', (ctx) => {
     if (ctx.from) {
         if (getUser(ctx.from.id) > -1) {
@@ -211,6 +212,17 @@ bot.on('message', (ctx) => {
         } else {
             ctx.reply("You have no selected channel. Please select a channel with /messagechannel.");
         }
+        // verify user has send access to channel
+        
+        else if (myChannel.senders.includes(ctx.from.id)){
+            let owner = userList[getUser(myChannel.owner)];
+            if (ctx.message.text) {
+                let alias = myChannel.senderAliasReverse.get(ctx.from.id);
+                let wrappedMessage = "<" + alias + "> " + ctx.message.text;
+                ctx.api.sendMessage(owner.chatID, wrappedMessage);
+            }
+        } 
+    // user is not in a channel
     } else {
         ctx.reply("Whoa there, something went wrong. Try using /start first.");
     }
@@ -262,7 +274,7 @@ function getChannelFromJoin(joinCode: string): number {
 
 // Returns the username extracted from a user's message
 function getUserFromMessage(message: string): string | null {
-    let re = new RegExp('<(.*)>');
+    let re = new RegExp('(?<=<).*(?=>)');
     let resultArray = re.exec(message);
     if (resultArray) {
         let result = resultArray[0];
