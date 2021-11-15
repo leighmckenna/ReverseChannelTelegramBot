@@ -149,79 +149,30 @@ bot.command('managechannel', (ctx) => {
 // })
 
 
-// deal with non-command user messages
+// deal with non-command user text messages
 bot.on('message', (ctx) => {
-    
     if (getUser(ctx.from.id) > -1) {
-            // if user is in a channel
+        // if user is in a channel
         if(userList[getUser(ctx.from.id)].activeChannel){
-            
-            let chanIndex = getChannel(userList[getUser(ctx.from.id)].activeChannel);
-            let myChannel = chanList[chanIndex];
+
+            let myUser = userList[getUser(ctx.from.id)];
+            let myChannel = chanList[getChannel(myUser.activeChannel)];
             
             // check if user owns channel
             if (myChannel.owner == ctx.from.id){
                 // check if message is a broadcast or reply
                 if (ctx.message.reply_to_message){
                     // message is a reply
-                    /*
-                    // message is a reply, send to singular user
-                    if (ctx.message.reply_to_message.text) {
-                        
-                        // owner is replying to a sender
-                        if (isUserMessage(ctx.message.reply_to_message.text)) {
-                            let sender = getUserFromMessage(ctx.message.reply_to_message.text);
-                            if (sender) {
-                                let senderID = getIDfromSender(sender, userList[getUser(ctx.from.id)].activeChannel)
-                                if (senderID) {
-                                    console.log("Sender is " + sender + " with ID " + senderID)
-                                    let user = userList[getUser(senderID)];
-                                    let owner = userList[getUser(myChannel.owner)];
-                                    let username = owner.nameOnMsg;
-                                    let wrappedMessage = "<" + username + "> " + ctx.message.text;
-                                    ctx.api.sendMessage(user.chatID, wrappedMessage);
-                                }
-                            }
-                        // owner is trying to reply to the bot
-                        } else if (ctx.message.text) {
-                            ctx.reply("I'm sorry, messages cannot be broadcast as replies.")
-                        }
-                        
-                    }
-                    */
-                   replyToSender(ctx, userList[getUser(ctx.from.id)], myChannel);
-
-                    
-
+                    replyToSender(ctx, userList[getUser(ctx.from.id)], myChannel);
                 } else {
-                    // message is not a reply, broadcast to all users
-                    // @TODO: Add support for media
-
-                    /*
-                    for (let userID of myChannel.senders) {
-                        let user = userList[getUser(userID)];
-                        if (ctx.message.text) {
-                            let owner = userList[getUser(myChannel.owner)];
-                            let username = owner.nameOnMsg;
-                            let wrappedMessage = "<" + username + "> " + ctx.message.text;
-                            ctx.api.sendMessage(user.chatID, wrappedMessage);
-                        }
-                    }
-                    */
-                   sendBroadcast(ctx, userList[getUser(ctx.from.id)], myChannel);
+                    // message is a broadcast
+                    sendBroadcast(ctx, userList[getUser(ctx.from.id)], myChannel);
                 }
             // User has send access to channel
             } else if (myChannel.senders.includes(ctx.from.id)){
                 // Send message to channel owner
-                let owner = userList[getUser(myChannel.owner)];
-                if (ctx.message.text) {
-                    if (process.env.NODE_ENV == 'dev'){
-                        console.log(JSON.stringify(myChannel));
-                    }
-                    let alias = myChannel.senderAliasReverse.get(ctx.from.id);
-                    let wrappedMessage = "<" + alias + "> " + ctx.message.text;
-                    ctx.api.sendMessage(owner.chatID, wrappedMessage);
-            }
+               sendToOwner(ctx, myUser, myChannel);
+
             // user is not in a channel
             } else {
                 ctx.reply("You have no selected channel. Please select a channel with /messagechannel.");
@@ -354,8 +305,10 @@ function replyToSender(ctx: Context, owner: AppUser, channel: Channel) {
                     let user = userList[getUser(senderID)];
                     let owner = userList[getUser(channel.owner)];
                     let username = owner.nameOnMsg;
-                    let wrappedMessage = "<" + username + "> " + ctx.message.text;
-                    ctx.api.sendMessage(user.chatID, wrappedMessage);
+                    let wrappedMessage = "_<" + username + "\\>_ " + ctx.message.text;
+                    ctx.api.sendMessage(user.chatID, wrappedMessage, {
+                        parse_mode: "MarkdownV2",
+                    });
                 }
             }
         // owner is trying to reply to the bot
@@ -363,4 +316,20 @@ function replyToSender(ctx: Context, owner: AppUser, channel: Channel) {
             ctx.reply("I'm sorry, messages cannot be broadcast as replies.");
         }
     }
+}
+
+function sendToOwner(ctx: Context, sender: AppUser, channel: Channel) {
+    let owner = userList[getUser(channel.owner)];
+    if (ctx.message && ctx.message.text && ctx.from) {
+        if (process.env.NODE_ENV == 'dev'){
+            console.log(JSON.stringify(channel));
+        }
+        let alias = channel.senderAliasReverse.get(sender.UUID);
+        let wrappedMessage = "<" + alias + "> " + ctx.message.text;
+        ctx.api.sendMessage(owner.chatID, wrappedMessage, {
+            parse_mode: "MarkdownV2",
+        });
+    } else {
+        ctx.reply("Something went wrong, please try again.");
+    }   
 }
