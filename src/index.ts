@@ -296,7 +296,7 @@ function sendBroadcast(ctx: Context, owner: AppUser, channel: Channel) {
 
 function replyToSender(ctx: Context, owner: AppUser, channel: Channel) {
     if (ctx.message && ctx.message.reply_to_message && ctx.from ){
-        if (ctx.message.reply_to_message.text) {
+        if (ctx.message.reply_to_message.text && isUserMessage(ctx.message.reply_to_message.text)) {
             let sender = getUserFromMessage(ctx.message.reply_to_message.text);
             if (sender) {
                 let senderID = getIDfromSender(sender, userList[getUser(ctx.from.id)].activeChannel);
