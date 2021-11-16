@@ -160,38 +160,11 @@ bot.command('managechannel', (ctx) => {
 bot.on('message:text', (ctx) => {
     sendMessage(ctx, replyToSenderText, sendBroadcastText, sendToOwnerText);
 });
-/*
+
 bot.on('message:sticker', (ctx) => {
-    if (getUser(ctx.from.id) > -1) {
-        // if user is in a channel
-        if(userList[getUser(ctx.from.id)].activeChannel){
-
-            let myUser = userList[getUser(ctx.from.id)];
-            let myChannel = chanList[getChannel(myUser.activeChannel)];
-            
-            // check if user owns channel
-            if (myChannel.owner == ctx.from.id){
-                // check if message is a broadcast or reply
-                if (ctx.message.reply_to_message){
-                    // message is a reply
-                    replyToSender(ctx, userList[getUser(ctx.from.id)], myChannel);
-                } else {
-                    // message is a broadcast
-                    sendBroadcast(ctx, userList[getUser(ctx.from.id)], myChannel);
-                }
-            // User has send access to channel
-            } else if (myChannel.senders.includes(ctx.from.id)){
-                // Send message to channel owner
-               sendToOwner(ctx, myUser, myChannel);
-
-            // user is not in a channel
-            } else {
-                ctx.reply("You have no selected channel. Please select a channel with /messagechannel.");
-            }
-        }
-    }
+    sendMessage(ctx, replyToSenderSticker, sendBroadcastSticker, sendToOwnerSticker);
 })
-*/
+
 // start bot
 bot.start();
 
@@ -374,4 +347,58 @@ function sendToOwnerText(ctx: Context, sender: AppUser, channel: Channel) {
     } else {
         ctx.reply("Something went wrong, please try again.");
     }   
+}
+
+function sendBroadcastSticker(ctx: Context, owner: AppUser, channel: Channel) {
+    if (ctx.message && ctx.message.sticker){
+        for (let senderID of channel.senders) {
+            let user = userList[getUser(senderID)];
+            let username = owner.nameOnMsg;
+            let wrappedMessage = "\<" + username + "\\>: ";
+            sendSticker(ctx, user.chatID, wrappedMessage, ctx.message.sticker.file_id);
+        }
+    } else {
+        ctx.reply("Something went wrong. Please try again.");
+    }
+}
+
+function replyToSenderSticker(ctx: Context, owner: AppUser, channel: Channel) {
+    if (ctx.message && ctx.message.reply_to_message && 
+        ctx.from && ctx.message.sticker){
+        if (ctx.message.reply_to_message.text && isUserMessage(ctx.message.reply_to_message.text)) {
+            let sender = getUserFromMessage(ctx.message.reply_to_message.text);
+            if (sender) {
+                let senderID = getIDfromSender(sender, owner.activeChannel);
+                if (senderID) {
+                    let user = userList[getUser(senderID)];
+                    let owner = userList[getUser(channel.owner)];
+                    let username = owner.nameOnMsg;
+                    let wrappedMessage = "_\<" + username + "\\>:_ ";
+                    sendSticker(ctx, user.chatID, wrappedMessage, ctx.message.sticker.file_id);
+                }
+            }
+        // owner is trying to reply to the bot
+        } else if (ctx.message.text) {
+            ctx.reply("I'm sorry, messages cannot be broadcast as replies.");
+        }
+    }
+}
+
+function sendToOwnerSticker(ctx: Context, sender: AppUser, channel: Channel) {
+    let owner = userList[getUser(channel.owner)];
+    if (ctx.message && ctx.message.sticker && ctx.from) {
+        let alias = channel.senderAliasReverse.get(sender.UUID);
+        let wrappedMessage = "\<" + alias + "\\>: ";
+        sendSticker(ctx, owner.chatID, wrappedMessage, ctx.message.sticker.file_id);
+    } else {
+        ctx.reply("Something went wrong, please try again.");
+    }   
+}
+
+// Sends a header followed by a sticker
+const sendSticker = async (ctx: Context, chatID: number, message: string, sticker: string) => {
+    const response = await ctx.api.sendMessage(chatID, message, {
+        parse_mode: "MarkdownV2",
+    });
+    ctx.api.sendSticker(chatID, sticker);
 }
