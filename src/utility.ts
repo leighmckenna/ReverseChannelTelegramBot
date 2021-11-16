@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AppUser, Channel } from './schema';
 import data from './wordList.json';
+import { Api, Bot, Context, InlineKeyboard } from 'grammy';
 
 // Generates a UUID from the UUID package
 function getUUID(): string {
@@ -85,9 +86,52 @@ function generateAlias(): string {
     return alias;
 }
 
+function joinChannel(ctx: Context, userList: AppUser[], chanList: Channel[]) {
+    if (ctx.from && ctx.message && ctx.message.text && ctx.match &&
+        getUser(ctx.from.id, userList) > -1) {
+        console.log("match is" + ctx.match);
+        let joinCode: string; //ctx.message.text.substring(13);
+        if (typeof ctx.match == "string") {
+            joinCode = ctx.match;
+        } else {
+            joinCode = ctx.match[0];
+        }
+        
+        console.log("join code is" + joinCode);
+        let channelInd = getChannelFromJoin(joinCode, chanList);
+        let userInd = getUser(ctx.from.id, userList);
+        // if the number exists and is within the bounds of normalcy
+        if (channelInd != null && channelInd >= 0 && channelInd < chanList.length) {
+            // add channel to user's default list
+            userList[userInd].channelsSender.push(chanList[channelInd].UUID);
+            // add user to the channel's allowed senders list
+            chanList[channelInd].senders.push(userList[userInd].UUID);
+            // switch user's active channel
+            userList[userInd].activeChannel = chanList[channelInd].UUID;
+            // give user an alias
+            let alias = generateAlias();
+            chanList[channelInd].senderAlias.set(alias, ctx.from.id);
+            chanList[channelInd].senderAliasReverse.set(ctx.from.id, alias);
+
+            ctx.reply("Alrighty, " + ctx.from.first_name + 
+                      ", you've joined a channel that forwards to:" + 
+                      userList[getUser(chanList[channelInd].owner, userList)].nameOnMsg);
+        } else {
+            ctx.reply("Oops, looks like that's not a valid code! Try again.");
+        }
+
+        if (process.env.NODE_ENV == 'dev'){
+            console.log(JSON.stringify(userList[userInd]));
+            console.log("User joined channel at index: " + (userInd));
+        }
+    } else {
+        ctx.reply("Whoa there, something went wrong. Try using /start first.");
+    }
+}
+
 export { getUUID, getUser, getIDfromSender, 
          getChannel, getChannelFromJoin, 
          getUserFromMessage, isUserMessage, 
          getOwnerNameFromChannel, userHasChannel, 
-         generateAlias };
+         generateAlias, joinChannel };
          
