@@ -239,6 +239,7 @@ function getOwnerNameFromChannel(UUID: string): string {
     return userList[ownerInd].nameOnMsg;
 }
 
+// Determines who a message is being sent to and from, then sends message accordingly using provided function pointers
 function sendMessage(ctx: Context, replyToSender: Function, sendBroadcast: Function, sendToOwner: Function) {
     if (ctx.from && ctx.message && getUser(ctx.from.id) > -1) {
         // if user is in a channel
@@ -249,6 +250,7 @@ function sendMessage(ctx: Context, replyToSender: Function, sendBroadcast: Funct
             
             // check if user owns channel
             if (channel.owner == ctx.from.id){
+                // user owns channel
                 // check if message is a broadcast or reply
                 if (ctx.message.reply_to_message){
                     // message is a reply
@@ -261,9 +263,9 @@ function sendMessage(ctx: Context, replyToSender: Function, sendBroadcast: Funct
                     // message is a broadcast
                     sendBroadcast(ctx, user, channel);
                 }
-            // User has send access to channel
             } else if (channel.senders.includes(ctx.from.id)){
-                // Send message to channel owner
+                // user does not own channel
+                // send message to channel owner
                sendToOwner(ctx, user, channel);
 
             // user is not in a channel
@@ -286,6 +288,7 @@ function userHasChannel(UUID: number): boolean {
     }
 }
 
+// Generate a random alias from the provided list of adjectives and nouns
 function generateAlias(): string {
     let alias = "";
 
@@ -298,8 +301,10 @@ function generateAlias(): string {
     return alias;
 }
 
+// Send a text message from the owner of a channel to all members of the channel
 function sendBroadcastText(ctx: Context, owner: AppUser, channel: Channel) {
     if (ctx.message){
+        // send to every member of a channel
         for (let senderID of channel.senders) {
             let user = userList[getUser(senderID)];
             if (ctx.message.text) {
@@ -313,9 +318,11 @@ function sendBroadcastText(ctx: Context, owner: AppUser, channel: Channel) {
     }
 }
 
+// Send a text message from the owner of a channel to a specific user as a reply
 function replyToSenderText(ctx: Context, owner: AppUser, channel: Channel) {
     if (ctx.message && ctx.message.reply_to_message && ctx.from ){
         if (ctx.message.reply_to_message.text && isUserMessage(ctx.message.reply_to_message.text)) {
+            // owner is replying to a user message
             let sender = getUserFromMessage(ctx.message.reply_to_message.text);
             if (sender) {
                 let senderID = getIDfromSender(sender, userList[getUser(ctx.from.id)].activeChannel);
@@ -330,13 +337,16 @@ function replyToSenderText(ctx: Context, owner: AppUser, channel: Channel) {
                     });
                 }
             }
-        // owner is trying to reply to the bot
+        // owner is erroneously trying to reply to the bot
         } else if (ctx.message.text) {
             ctx.reply("I'm sorry, messages cannot be broadcast as replies.");
         }
+    } else {
+        ctx.reply("Something went wrong. Please try again.");
     }
 }
 
+// Send a text message from a user of a channel to the owner of the channel
 function sendToOwnerText(ctx: Context, sender: AppUser, channel: Channel) {
     let owner = userList[getUser(channel.owner)];
     if (ctx.message && ctx.message.text && ctx.from) {
@@ -353,6 +363,7 @@ function sendToOwnerText(ctx: Context, sender: AppUser, channel: Channel) {
     }   
 }
 
+// Send a sticker message from the owner of a channel to all members of the channel
 function sendBroadcastSticker(ctx: Context, owner: AppUser, channel: Channel) {
     if (ctx.message && ctx.message.sticker){
         for (let senderID of channel.senders) {
@@ -366,10 +377,12 @@ function sendBroadcastSticker(ctx: Context, owner: AppUser, channel: Channel) {
     }
 }
 
+// Send a sticker message from the owner of a channel to a specific user as a reply
 function replyToSenderSticker(ctx: Context, owner: AppUser, channel: Channel) {
     if (ctx.message && ctx.message.reply_to_message && 
         ctx.from && ctx.message.sticker){
         if (ctx.message.reply_to_message.text && isUserMessage(ctx.message.reply_to_message.text)) {
+            // owner is replying to a user message
             let sender = getUserFromMessage(ctx.message.reply_to_message.text);
             if (sender) {
                 let senderID = getIDfromSender(sender, owner.activeChannel);
@@ -385,9 +398,12 @@ function replyToSenderSticker(ctx: Context, owner: AppUser, channel: Channel) {
         } else if (ctx.message.text) {
             ctx.reply("I'm sorry, messages cannot be broadcast as replies.");
         }
+    } else {
+        ctx.reply("Something went wrong. Please try again.");
     }
 }
 
+// Send a sticker message from a user of a channel to the owner of the channel
 function sendToOwnerSticker(ctx: Context, sender: AppUser, channel: Channel) {
     let owner = userList[getUser(channel.owner)];
     if (ctx.message && ctx.message.sticker && ctx.from) {
