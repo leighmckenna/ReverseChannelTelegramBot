@@ -252,7 +252,11 @@ function sendMessage(ctx: Context, replyToSender: Function, sendBroadcast: Funct
                 // check if message is a broadcast or reply
                 if (ctx.message.reply_to_message){
                     // message is a reply
-                    replyToSender(ctx, user, channel);
+                    if (ctx.message.reply_to_message.sticker) {
+                        ctx.reply("Error: Cannot reply to a sticker. Reply to the header above it instead.")
+                    } else {
+                        replyToSender(ctx, user, channel);
+                    }
                 } else {
                     // message is a broadcast
                     sendBroadcast(ctx, user, channel);
