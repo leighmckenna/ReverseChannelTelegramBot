@@ -3,6 +3,13 @@ import { AppUser, Channel } from './schema';
 import { v4 as uuidv4 } from 'uuid';
 import data from './wordList.json';
 
+// @TODO: Make MessageType Enum
+enum MessageType {
+    Text,
+    Sticker,
+    Photo,
+}
+
 
 const bot = new Bot(process.env.BOT_TOKEN);
 
@@ -150,7 +157,11 @@ bot.command('managechannel', (ctx) => {
 
 
 // deal with non-command user text messages
-bot.on('message', (ctx) => {
+bot.on('message:text', (ctx) => {
+    sendMessage(ctx, replyToSenderText, sendBroadcastText, sendToOwnerText);
+});
+/*
+bot.on('message:sticker', (ctx) => {
     if (getUser(ctx.from.id) > -1) {
         // if user is in a channel
         if(userList[getUser(ctx.from.id)].activeChannel){
@@ -179,8 +190,8 @@ bot.on('message', (ctx) => {
             }
         }
     }
-});
-
+})
+*/
 // start bot
 bot.start();
 
@@ -255,6 +266,37 @@ function getOwnerNameFromChannel(UUID: string): string {
     return userList[ownerInd].nameOnMsg;
 }
 
+function sendMessage(ctx: Context, replyToSender: Function, sendBroadcast: Function, sendToOwner: Function) {
+    if (ctx.from && ctx.message && getUser(ctx.from.id) > -1) {
+        // if user is in a channel
+        if(userList[getUser(ctx.from.id)].activeChannel){
+
+            let user = userList[getUser(ctx.from.id)];
+            let channel = chanList[getChannel(user.activeChannel)];
+            
+            // check if user owns channel
+            if (channel.owner == ctx.from.id){
+                // check if message is a broadcast or reply
+                if (ctx.message.reply_to_message){
+                    // message is a reply
+                    replyToSender(ctx, user, channel);
+                } else {
+                    // message is a broadcast
+                    sendBroadcast(ctx, user, channel);
+                }
+            // User has send access to channel
+            } else if (channel.senders.includes(ctx.from.id)){
+                // Send message to channel owner
+               sendToOwner(ctx, user, channel);
+
+            // user is not in a channel
+            } else {
+                ctx.reply("You have no selected channel. Please select a channel with /messagechannel.");
+            }
+        }
+    }
+}
+
 // Returns true if the channel exists and else otherwise
 function userHasChannel(UUID: number): boolean {
     let channel = chanList.findIndex(Channel => Channel.owner === UUID);
@@ -279,13 +321,13 @@ function generateAlias(): string {
     return alias;
 }
 
-function sendBroadcast(ctx: Context, owner: AppUser, channel: Channel) {
+function sendBroadcastText(ctx: Context, owner: AppUser, channel: Channel) {
     if (ctx.message){
         for (let senderID of channel.senders) {
             let user = userList[getUser(senderID)];
             if (ctx.message.text) {
                 let username = owner.nameOnMsg;
-                let wrappedMessage = "<" + username + "> " + ctx.message.text;
+                let wrappedMessage = "\<" + username + "\>: " + ctx.message.text;
                 ctx.api.sendMessage(user.chatID, wrappedMessage);
             }
         }
@@ -294,7 +336,7 @@ function sendBroadcast(ctx: Context, owner: AppUser, channel: Channel) {
     }
 }
 
-function replyToSender(ctx: Context, owner: AppUser, channel: Channel) {
+function replyToSenderText(ctx: Context, owner: AppUser, channel: Channel) {
     if (ctx.message && ctx.message.reply_to_message && ctx.from ){
         if (ctx.message.reply_to_message.text && isUserMessage(ctx.message.reply_to_message.text)) {
             let sender = getUserFromMessage(ctx.message.reply_to_message.text);
@@ -305,7 +347,7 @@ function replyToSender(ctx: Context, owner: AppUser, channel: Channel) {
                     let user = userList[getUser(senderID)];
                     let owner = userList[getUser(channel.owner)];
                     let username = owner.nameOnMsg;
-                    let wrappedMessage = "_<" + username + "\\>_ " + ctx.message.text;
+                    let wrappedMessage = "_\<" + username + "\\>:_ " + ctx.message.text;
                     ctx.api.sendMessage(user.chatID, wrappedMessage, {
                         parse_mode: "MarkdownV2",
                     });
@@ -318,14 +360,14 @@ function replyToSender(ctx: Context, owner: AppUser, channel: Channel) {
     }
 }
 
-function sendToOwner(ctx: Context, sender: AppUser, channel: Channel) {
+function sendToOwnerText(ctx: Context, sender: AppUser, channel: Channel) {
     let owner = userList[getUser(channel.owner)];
     if (ctx.message && ctx.message.text && ctx.from) {
         if (process.env.NODE_ENV == 'dev'){
             console.log(JSON.stringify(channel));
         }
         let alias = channel.senderAliasReverse.get(sender.UUID);
-        let wrappedMessage = "<" + alias + "> " + ctx.message.text;
+        let wrappedMessage = "\<" + alias + "\\>: " + ctx.message.text;
         ctx.api.sendMessage(owner.chatID, wrappedMessage, {
             parse_mode: "MarkdownV2",
         });
