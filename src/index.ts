@@ -1,7 +1,7 @@
 import { Api, Bot, Context, InlineKeyboard } from 'grammy';
 import { AppUser, Channel } from './schema';
 import { getUUID, getUser, getChannel, getChannelFromJoin, 
-         userHasChannel, generateAlias } from './utility';
+         userHasChannel, generateAlias, joinChannel } from './utility';
 import { sendMessage, sendBroadcastText, replyToSenderText, 
          sendToOwnerText, sendBroadcastSticker, 
          replyToSenderSticker, sendToOwnerSticker 
@@ -15,6 +15,7 @@ enum MessageType {
 }
 
 const bot = new Bot(process.env.BOT_TOKEN);
+const botName = process.env.BOT_NAME;
 
 //define global lists of users and channels
 var userList: AppUser[] = [];
@@ -41,9 +42,18 @@ bot.command('start', (ctx) => {
         }
 
         ctx.reply("Hello, " + ctx.from.first_name + ", \n\n Thank you for using this bot, you have been registered.\n\n In order to get started, either join a channel with /joinchat followed by the code you were given, or make a channel with /newchannel.");
+        if (ctx.match) {
+            console.log(ctx.match);
+            joinChannel(ctx, userList, chanList);
+        }
     }
     else if (ctx.from) {
-        ctx.reply("Hello, " + ctx.from.first_name + ", it looks like you already exist and don't need to run /start.");
+        if (ctx.match) {
+            console.log(ctx.match);
+            joinChannel(ctx, userList, chanList);
+        } else {
+            ctx.reply("Hello, " + ctx.from.first_name + ", it looks like you already exist and don't need to run /start.");
+        }
     }
     else {
         ctx.reply("According to telegram, no one sent this message. Please try again or contact the owner of the bot.");
@@ -79,7 +89,10 @@ bot.command('newchannel', (ctx) => {
                 // set channel as the active channel
                 thisUser.activeChannel = newChannel.UUID;
                 
+                let url = "https://t.me/" + botName + "?start=" + chanList[chanList.length - 1].joinLink;
+
                 ctx.reply("Alrighty, " + ctx.from.first_name + ", a new channel directed at you has been set up! In order to let people join, have them message this bot and sent this message: \n\n/joinchannel " + chanList[chanList.length - 1].joinLink + "\n\n After that, they'll be able to send you anonymous via this bot.");
+                ctx.reply("Here's your join URL: " + url);
             }
         } else {
             ctx.reply("Whoa there, something went wrong. Try using /start first.");
@@ -91,43 +104,7 @@ bot.command('newchannel', (ctx) => {
 // Join an existing channel via code
 // @TODO: Error validation - What happens if the user hasn't called /start?
 bot.command('joinchannel', (ctx) => {
-    if (ctx.from) {
-        if (getUser(ctx.from.id, userList) > -1) {
-            let joinCode: string = ctx.message.text.substring(13);
-            let channelInd = getChannelFromJoin(joinCode, chanList);
-            let userInd = getUser(ctx.from.id, userList);
-            // if the number exists and is within the bounds of normalcy
-            if (channelInd != null && channelInd >= 0 && channelInd < chanList.length) {
-                // add channel to user's default list
-                userList[userInd].channelsSender.push(chanList[channelInd].UUID);
-                // add user to the channel's allowed senders list
-                chanList[channelInd].senders.push(userList[userInd].UUID);
-                // switch user's active channel
-                userList[userInd].activeChannel = chanList[channelInd].UUID;
-                // give user an alias
-                let alias = generateAlias();
-                chanList[channelInd].senderAlias.set(alias, ctx.from.id);
-                chanList[channelInd].senderAliasReverse.set(ctx.from.id, alias);
-
-                ctx.reply("Alrighty, " + ctx.from.first_name + 
-                          ", you've joined a channel that forwards to:" + 
-                          userList[getUser(chanList[channelInd].owner, userList)].nameOnMsg);
-            } else {
-                ctx.reply("Oops, looks like that's not a valid code! Try again.");
-            }
-
-            if (process.env.NODE_ENV == 'dev'){
-                console.log(JSON.stringify(userList[userInd]));
-                console.log("User joined channel at index: " + (userInd));
-            }
-        } else {
-            ctx.reply("Whoa there, something went wrong. Try using /start first.");
-        }
-
-        
-    }
-
-    
+    joinChannel(ctx, userList, chanList);    
 });
 
 // menu for channel management
