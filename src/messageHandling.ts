@@ -156,6 +156,7 @@ function replyToSenderSticker(ctx: Context, owner: AppUser, channel: Channel, us
 
 // Send a sticker message from a user of a channel to the owner of the channel
 function sendToOwnerSticker(ctx: Context, sender: AppUser, channel: Channel, userList: AppUser[]) {
+    console.log(JSON.stringify(userList));
     let owner = userList[getUser(channel.owner, userList)];
     if (ctx.message && ctx.message.sticker && ctx.from) {
         let alias = channel.senderAliasReverse.get(sender.UUID);
