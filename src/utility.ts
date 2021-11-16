@@ -9,6 +9,7 @@ function getUUID(): string {
 
 // Returns the index of the user that has the UUID specified
 function getUser(UUID: number, userList: AppUser[]): number {
+    console.log(JSON.stringify(userList));
     return userList.findIndex(AppUser => AppUser.UUID === UUID);
 }
 

@@ -27,16 +27,18 @@ function sendMessage(ctx: Context, replyToSender: Function, sendBroadcast: Funct
                     if (ctx.message.reply_to_message.sticker) {
                         ctx.reply("Error: Cannot reply to a sticker. Reply to the header above it instead.")
                     } else {
-                        replyToSender(ctx, user, channel);
+                        replyToSender(ctx, user, channel, userList, chanList);
                     }
                 } else {
                     // message is a broadcast
-                    sendBroadcast(ctx, user, channel);
+                    console.log("Sending message");
+                    sendBroadcast(ctx, user, channel, userList);
                 }
             } else if (channel.senders.includes(ctx.from.id)){
                 // user does not own channel
                 // send message to channel owner
-               sendToOwner(ctx, user, channel);
+                console.log("Sending message");
+                sendToOwner(ctx, user, channel, userList);
 
             // user is not in a channel
             } else {
@@ -48,6 +50,8 @@ function sendMessage(ctx: Context, replyToSender: Function, sendBroadcast: Funct
 
 // Send a text message from the owner of a channel to all members of the channel
 function sendBroadcastText(ctx: Context, owner: AppUser, channel: Channel, userList: AppUser[]) {
+    console.log("sending broadcast")
+    console.log(JSON.stringify(userList));
     if (ctx.message){
         // send to every member of a channel
         for (let senderID of channel.senders) {
@@ -93,6 +97,8 @@ function replyToSenderText(ctx: Context, owner: AppUser, channel: Channel, userL
 
 // Send a text message from a user of a channel to the owner of the channel
 function sendToOwnerText(ctx: Context, sender: AppUser, channel: Channel, userList: AppUser[]) {
+    console.log("sending to owner");
+    console.log(JSON.stringify(userList));
     let owner = userList[getUser(channel.owner, userList)];
     if (ctx.message && ctx.message.text && ctx.from) {
         if (process.env.NODE_ENV == 'dev'){

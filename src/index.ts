@@ -137,6 +137,8 @@ bot.command('managechannel', (ctx) => {
 
 // deal with non-command user text messages
 bot.on('message:text', (ctx) => {
+    console.log("message received, sending...")
+    console.log(JSON.stringify(userList));
     sendMessage(ctx, replyToSenderText, sendBroadcastText, sendToOwnerText, userList, chanList);
 });
 
